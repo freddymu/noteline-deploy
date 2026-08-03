@@ -1,0 +1,77 @@
+# Zeabur template. Deploy via: https://zeabur.com/templates/deploy?template=<this-repo-url>
+# (see docs/zeabur.md once you've published this as a template through the Zeabur dashboard/CLI)
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Noteline
+spec:
+  description: Self-hosted web annotation tool — highlights, comments, and reactions on any webpage via a script embed.
+  tags:
+    - Productivity
+    - Collaboration
+  readme: |
+    # Noteline
+
+    Self-hosted web annotation tool. After deploy, set `PUBLIC_BASE_URL` to the domain Zeabur assigns
+    this service (Settings → Domain) if it isn't already picked up automatically, then redeploy.
+  variables:
+    - key: WEB_DOMAIN
+      type: DOMAIN
+      name: Noteline domain
+      description: Subdomain Zeabur will assign to the Noteline web service (e.g. yourteam -> yourteam.zeabur.app)
+  services:
+    - name: Postgres
+      icon: https://registry.zeabur.com/postgresql.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: postgres:17-alpine
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        env:
+          POSTGRES_DB:
+            default: noteline
+          POSTGRES_USER:
+            default: noteline
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+          DATABASE_URL:
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${CONTAINER_HOSTNAME}:5432/${POSTGRES_DB}?sslmode=disable
+            expose: true
+            readonly: true
+
+    - name: Noteline
+      template: PREBUILT
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - Postgres
+      spec:
+        source:
+          image: sololevelingquest/noteline:latest
+        ports:
+          - id: web
+            port: 8080
+            type: HTTP
+        env:
+          PORT:
+            default: "8080"
+          # Cross-service reference to Postgres's exposed DATABASE_URL.
+          # Verify this reference syntax against the current Zeabur docs when testing — Zeabur's
+          # cross-service variable naming convention may differ from what's assumed here.
+          DATABASE_URL:
+            default: ${POSTGRES_DATABASE_URL}
+          SECRET_KEY:
+            default: ${PASSWORD}
+          # NOTELINE_ENCRYPTION_KEY must be a base64-encoded 32-byte value. Zeabur's ${PASSWORD}
+          # generator format isn't guaranteed to match this — verify after first deploy and
+          # regenerate with `openssl rand -base64 32` manually if needed.
+          NOTELINE_ENCRYPTION_KEY:
+            default: ${PASSWORD}
+          PUBLIC_BASE_URL:
+            default: https://${WEB_DOMAIN}.zeabur.app
+            expose: true

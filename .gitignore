@@ -1,0 +1,4 @@
+.remember/
+.env
+.env.gitpod
+.DS_Store

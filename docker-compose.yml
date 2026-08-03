@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: noteline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: noteline
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noteline -d noteline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  noteline:
+    image: sololevelingquest/noteline:latest
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://noteline:${POSTGRES_PASSWORD}@db:5432/noteline?sslmode=disable
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required, e.g. openssl rand -base64 32}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme}
+      PORT: "8080"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required, e.g. https://noteline.yourdomain.com}
+      NOTELINE_ENCRYPTION_KEY: ${NOTELINE_ENCRYPTION_KEY:?NOTELINE_ENCRYPTION_KEY is required, e.g. openssl rand -base64 32}
+      WHATSAPP_WEBHOOK_SECRET: ${WHATSAPP_WEBHOOK_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

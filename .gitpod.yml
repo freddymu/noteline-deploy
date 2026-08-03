@@ -1,0 +1,20 @@
+# Dev/demo workspace only — NOT a production deployment path.
+# Spins up Noteline + Postgres via docker-compose.yml with freshly generated secrets so it "just works"
+# for trying the product out. Data is lost when the workspace is deleted.
+image: gitpod/workspace-base
+
+tasks:
+  - name: Noteline (dev/demo)
+    init: |
+      echo "SECRET_KEY=$(openssl rand -base64 32)" >> .env.gitpod
+      echo "NOTELINE_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env.gitpod
+      echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)" >> .env.gitpod
+    command: |
+      export PUBLIC_BASE_URL=$(gp url 8080)
+      set -a; source .env.gitpod; set +a
+      docker compose up
+
+ports:
+  - port: 8080
+    onOpen: open-preview
+    visibility: public

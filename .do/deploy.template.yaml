@@ -1,0 +1,38 @@
+spec:
+  name: noteline
+  services:
+    - name: noteline
+      image:
+        registry_type: DOCKER_HUB
+        registry: docker.io
+        repository: sololevelingquest/noteline
+        tag: latest
+      http_port: 8080
+      instance_count: 1
+      instance_size_slug: basic-xxs
+      health_check:
+        http_path: /health
+      envs:
+        - key: PORT
+          value: "8080"
+          type: GENERAL
+        - key: DATABASE_URL
+          value: ${noteline-db.DATABASE_URL}
+          type: GENERAL
+        - key: SECRET_KEY
+          type: SECRET
+          value: "REPLACE_ME_openssl_rand_base64_32"
+        - key: NOTELINE_ENCRYPTION_KEY
+          type: SECRET
+          value: "REPLACE_ME_openssl_rand_base64_32"
+        # ${APP_URL} is DO App Platform's built-in bindable variable for this app's public URL.
+        - key: PUBLIC_BASE_URL
+          value: ${APP_URL}
+          type: GENERAL
+  databases:
+    - name: noteline-db
+      engine: PG
+      version: "17"
+      production: false
+      db_name: noteline
+      db_user: noteline

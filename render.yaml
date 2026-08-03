@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: noteline
+    runtime: image
+    image:
+      url: docker.io/sololevelingquest/noteline:latest
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: noteline-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: NOTELINE_ENCRYPTION_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      # Render assigns your service's *.onrender.com domain only after the first deploy.
+      # Fill this in (or set your custom domain) in the dashboard after deploy, then redeploy.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: PORT
+        value: "8080"
+
+databases:
+  - name: noteline-db
+    databaseName: noteline
+    user: noteline
+    plan: starter
+    postgresMajorVersion: "17"

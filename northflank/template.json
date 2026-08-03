@@ -1,0 +1,47 @@
+{
+  "apiVersion": "v1.2",
+  "name": "noteline",
+  "description": "Self-hosted web annotation tool — highlights, comments, and reactions on any webpage via a script embed.",
+  "spec": {
+    "kind": "Workflow",
+    "spec": {
+      "type": "sequential",
+      "steps": [
+        {
+          "kind": "Addon",
+          "spec": {
+            "name": "noteline-db",
+            "type": "postgresql",
+            "version": "17"
+          }
+        },
+        {
+          "kind": "DeploymentService",
+          "spec": {
+            "name": "noteline",
+            "deployment": {
+              "instances": 1,
+              "external": {
+                "imagePath": "sololevelingquest/noteline:latest"
+              }
+            },
+            "ports": [
+              {
+                "name": "web",
+                "internalPort": 8080,
+                "public": true,
+                "protocol": "HTTP"
+              }
+            ],
+            "runtimeEnvironment": {
+              "PORT": "8080",
+              "DATABASE_URL": "${refs.noteline-db.envs.POSTGRES_URI}",
+              "SECRET_KEY": "${fn.randomSecret(256)}",
+              "NOTELINE_ENCRYPTION_KEY": "${fn.randomSecret(256)}"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
